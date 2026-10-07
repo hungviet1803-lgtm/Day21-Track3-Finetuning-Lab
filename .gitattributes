@@ -1,0 +1,4 @@
+# Eval checksums (data/checksums.json) are over LF bytes; Windows autocrlf would
+# rewrite them to CRLF on checkout and make verify.py report the eval set as edited.
+data/*.jsonl text eol=lf
+data/*.json text eol=lf
