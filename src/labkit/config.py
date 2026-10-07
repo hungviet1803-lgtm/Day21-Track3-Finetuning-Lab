@@ -88,15 +88,7 @@ def get_tier(name: str | None = None) -> Tier:
         )
     tier = TIERS[key]
     override = os.environ.get("BASE_MODEL", "").strip()
-    if override:
-        tier = replace(tier, model_id=override)
-    # $MAX_LENGTH: set it from NB1's measured p95 (results/token_stats.json), not from the
-    # tier's hardware ceiling. The tier value is an upper bound for what fits in VRAM; the
-    # right value for a corpus is what its sequences actually need.
-    max_len = os.environ.get("MAX_LENGTH", "").strip()
-    if max_len:
-        tier = replace(tier, max_length=int(max_len))
-    return tier
+    return replace(tier, model_id=override) if override else tier
 
 
 # --- Training configuration -------------------------------------------------

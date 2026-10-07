@@ -76,15 +76,6 @@ def score_run(model, tok, system_prompt, label):
 scores_a, preds_a, _ = score_run(model, tok, generate.NAIVE_PROMPT, "(a) base + naive prompt")
 scores_b, preds_b, rpreds_b = score_run(model, tok, generate.OPTIMIZED_PROMPT, "(b) base + optimized prompt")
 
-# Keep the raw generations. NB5 needs (b)'s per-item output to show where the fine-tune
-# loses to the prompt — an aggregate score alone cannot say which tickets those are.
-report.write_json({
-    "target": [{"i": i, "ticket": r["input"], "label": r["label"], "pred_a": pa, "pred_b": pb}
-               for i, (r, pa, pb) in enumerate(zip(target, preds_a, preds_b))],
-    "regression_b": [{"q": r["instruction"], "keywords": r["keywords"], "pred": p}
-                     for r, p in zip(regression, rpreds_b)],
-}, "baseline_preds.json", results_dir=ROOT / "results")
-
 # %% [markdown]
 # ## 3. Đóng băng
 #

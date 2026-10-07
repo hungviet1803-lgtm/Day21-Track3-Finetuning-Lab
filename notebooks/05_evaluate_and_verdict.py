@@ -186,45 +186,17 @@ report.write_json(autopsy, "autopsy.json", results_dir=ROOT / "results")
 # cherry-pick và bị trừ điểm ở mục Evaluation Quality.
 
 # %%
-#
-# "Thua" ở đây nghĩa là thua **(b) trên cùng một ticket** — không phải "điểm FT thấp".
-# Một ca FT 0.75 mà (b) 1.00 là ca thua; một ca cả hai cùng 0.50 thì không.
-
-# %%
-bpath = ROOT / "results" / "baseline_preds.json"
-preds_b = ([x["pred_b"] for x in json.loads(bpath.read_text(encoding="utf-8"))["target"]]
-           if bpath.exists() else [None] * len(target))
-
 rows = []
-for i, (p, pb, r) in enumerate(zip(preds_ft, preds_b, target)):
+for i, (p, r) in enumerate(zip(preds_ft, target)):
     s_ft = ev.triage_field_accuracy(p, r["label"])
-    s_b = None if pb is None else ev.triage_field_accuracy(pb, r["label"])
-    rows.append({"i": i, "ticket": r["input"], "label": r["label"],
-                 "ft_score": round(s_ft, 2), "b_score": None if s_b is None else round(s_b, 2),
-                 "delta": None if s_b is None else round(s_ft - s_b, 2),
-                 "ft_pred": p, "b_pred": pb})
-
-cols = ["i", "ft_score", "b_score", "ft_pred"]
-if bpath.exists():
-    losses = sorted([x for x in rows if x["delta"] < 0], key=lambda x: x["delta"])
-    wins = sorted([x for x in rows if x["delta"] > 0], key=lambda x: -x["delta"])
-    ties = len(rows) - len(losses) - len(wins)
-    print(f"per-ticket vs (b): FT thắng {len(wins)} · thua {len(losses)} · hoà {ties}")
-    print("--- FT THUA (b) (bắt buộc đưa vào report) ---")
-    print(report.markdown_table(losses[:5], cols))
-    print("\n--- FT THẮNG (b) ---")
-    print(report.markdown_table(wins[:5], cols))
+    rows.append({"i": i, "ticket": r["input"][:70], "ft_score": round(s_ft, 2),
+                 "ft_pred": p.replace("\n", " ")[:90]})
 rows.sort(key=lambda x: x["ft_score"])
-print("\n--- 3 ca FT TỆ NHẤT (điểm tuyệt đối) ---")
-print(report.markdown_table(rows[:3], cols))
+print("--- 3 ca TỆ NHẤT (bắt buộc đưa vào report) ---")
+print(report.markdown_table(rows[:3], ["i", "ticket", "ft_score", "ft_pred"]))
+print("\n--- 3 ca TỐT NHẤT ---")
+print(report.markdown_table(rows[-3:], ["i", "ticket", "ft_score", "ft_pred"]))
 report.write_json(rows, "qualitative.json", results_dir=ROOT / "results")
-
-# Regression outputs too: a regression score says THAT general ability moved, only the
-# text says HOW (prose vs. triage JSON is a different failure than a wrong fact).
-report.write_json([{"q": r["instruction"], "keywords": r["keywords"], "pred": p,
-                    "recall": ev.keyword_recall(p, r["keywords"])}
-                   for r, p in zip(regression, rpreds_ft)],
-                  "regression_outputs.json", results_dir=ROOT / "results")
 
 # %% [markdown]
 # ## ✅ Checkpoint NB5
