@@ -139,6 +139,22 @@ proof = {
 }
 assert proof["answer_is_supervised"], "câu trả lời KHÔNG nằm trong loss — mask sai"
 assert proof["question_is_masked"], "câu hỏi ĐANG nằm trong loss — mask sai"
+
+# One example proves the mechanism; the corpus is what gets trained. Re-run the same two
+# checks on EVERY record — a truncation or an odd character in one ticket would not show
+# up in train_raw[0]. Exact containment of the full answer and full ticket, not a prefix.
+bad, fracs = [], []
+for i, r in enumerate(train_raw):
+    m = data.to_messages(r)
+    e = data.build_example(tok, m, max_length=TIER.max_length, mask_mode="assistant-only")
+    sup = data.decode_supervised(tok, e)
+    fracs.append(e.supervised_fraction)
+    if m[-1]["content"] not in sup or r["input"] in sup or e.n_total >= TIER.max_length:
+        bad.append(i)
+proof["corpus_checked"] = len(train_raw)
+proof["corpus_failures"] = bad
+proof["corpus_supervised_fraction_range"] = [round(min(fracs), 4), round(max(fracs), 4)]
+assert not bad, f"mask sai trên {len(bad)} mẫu: {bad[:10]}"
 print(json.dumps({k: v for k, v in proof.items() if not k.endswith("preview")},
                  ensure_ascii=False, indent=2))
 report.write_json(proof, "mask_proof.json", results_dir=ROOT / "results")
